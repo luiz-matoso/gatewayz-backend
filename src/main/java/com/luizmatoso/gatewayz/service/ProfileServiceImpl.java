@@ -5,7 +5,9 @@ import com.luizmatoso.gatewayz.dto.ProfileResponse;
 import com.luizmatoso.gatewayz.entity.User;
 import com.luizmatoso.gatewayz.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -18,8 +20,14 @@ public class ProfileServiceImpl implements ProfileService{
     @Override
     public ProfileResponse createProfile(ProfileRequest request) {
         User newUserProfile = convertToUserEntity(request);
-        newUserProfile = userRepository.save(newUserProfile);
-        return convertToProfileResponse(newUserProfile);
+        if (!userRepository.existsByEmail(request.getEmail())){
+            newUserProfile = userRepository.save(newUserProfile);
+            return convertToProfileResponse(newUserProfile);
+        }
+
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists.");
+
+
     }
 
     private ProfileResponse convertToProfileResponse(User newUserProfile) {
