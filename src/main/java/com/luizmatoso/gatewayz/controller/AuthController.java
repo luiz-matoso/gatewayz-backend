@@ -2,9 +2,11 @@ package com.luizmatoso.gatewayz.controller;
 
 import com.luizmatoso.gatewayz.dto.AuthRequest;
 import com.luizmatoso.gatewayz.dto.AuthResponse;
+import com.luizmatoso.gatewayz.dto.ResetPasswordRequest;
 import com.luizmatoso.gatewayz.service.AppUserDetailsService;
 import com.luizmatoso.gatewayz.service.ProfileService;
 import com.luizmatoso.gatewayz.util.JwtUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -80,6 +82,15 @@ public class AuthController {
     public void sendResetOtp(@RequestParam String email){
         try {
             profileService.sendResetOtp(email);
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request){
+        try{
+            profileService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
         } catch (Exception e){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
