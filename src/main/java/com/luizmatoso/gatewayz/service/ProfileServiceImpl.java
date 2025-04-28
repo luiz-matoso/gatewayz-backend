@@ -6,10 +6,12 @@ import com.luizmatoso.gatewayz.entity.User;
 import com.luizmatoso.gatewayz.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -28,8 +30,14 @@ public class ProfileServiceImpl implements ProfileService{
         }
 
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists.");
+    }
 
+    @Override
+    public ProfileResponse getProfile(String email) {
+        User existingUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
+        return convertToProfileResponse(existingUser);
     }
 
     private ProfileResponse convertToProfileResponse(User newUserProfile) {
