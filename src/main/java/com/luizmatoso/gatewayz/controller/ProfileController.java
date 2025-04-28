@@ -21,5 +21,4 @@ public class ProfileController {
         ProfileResponse response = profileService.createProfile(request);
         return response;
     }
-
 }
