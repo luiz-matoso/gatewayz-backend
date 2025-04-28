@@ -4,6 +4,7 @@ import com.luizmatoso.gatewayz.dto.ProfileRequest;
 import com.luizmatoso.gatewayz.dto.ProfileResponse;
 import com.luizmatoso.gatewayz.entity.User;
 import com.luizmatoso.gatewayz.repository.UserRepository;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ public class ProfileServiceImpl implements ProfileService{
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Override
     public ProfileResponse createProfile(ProfileRequest request) {
@@ -38,6 +41,31 @@ public class ProfileServiceImpl implements ProfileService{
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
         return convertToProfileResponse(existingUser);
+    }
+
+    @Override
+    public void sendResetOtp(String email) {
+        User existingUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+
+        // otp - 6 digits
+        String otp = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+
+        // expiration Time
+        long expirationTime = System.currentTimeMillis() + (15 * 60 * 1000);
+
+        // update profile
+        existingUser.setResetOtp(otp);
+        existingUser.setResetOtpExpireAt(expirationTime);
+
+        //save into database
+        userRepository.save(existingUser);
+
+        try{
+            emailService.sendResetOtpEmail(existingUser.getEmail(), otp);
+        } catch (Exception e){
+            throw new RuntimeException("Unable to send email.");
+        }
     }
 
     private ProfileResponse convertToProfileResponse(User newUserProfile) {
